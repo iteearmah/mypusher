@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pusher Web Client</title>
+  <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-bottom: 10px; }
+    input { padding: 10px; width: 200px; }
+    button { padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Pusher Web Client</h1>
+  <div id="messages"></div>
+  <input type="text" id="messageInput" placeholder="Type a message...">
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    // Replace with your local server details
+    const PUSHER_KEY = 'any-key'; // Our custom server doesn't validate keys yet
+    const PUSHER_CLUSTER = 'mt1';
+    const SERVER_URL = 'http://localhost:3000';
+
+    const pusher = new Pusher(PUSHER_KEY, {
+      cluster: PUSHER_CLUSTER,
+      wsHost: '127.0.0.1',
+      wsPort: 3000,
+      forceTLS: false,
+      disableStats: true,
+      enabledTransports: ['ws', 'wss']
+    });
+
+    const channel = pusher.subscribe('my-channel');
+    channel.bind('my-event', (data) => {
+      const messagesDiv = document.getElementById('messages');
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `Received: ${JSON.stringify(data)}`;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value;
+      if (!message) return;
+
+      try {
+        const response = await fetch(`${SERVER_URL}/message`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            channel: 'my-channel',
+            event: 'my-event',
+            data: { message: message }
+          }),
+        });
+        if (response.ok) {
+          input.value = '';
+        } else {
+          console.error('Failed to send message');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+  </script>
+</body>
+</html>

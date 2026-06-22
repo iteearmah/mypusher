@@ -1,0 +1,29 @@
+{
+  "name": "mypusher",
+  "version": "1.0.0",
+  "description": "A custom-built, Pusher-compatible WebSocket server for real-time messaging.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pusher",
+    "websocket",
+    "realtime",
+    "node.js",
+    "express",
+    "messaging"
+  ],
+  "author": "Samuel Armah <iteearmah@gmail.com>",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "body-parser": "^2.3.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pusher-js": "^8.5.0",
+    "ws": "^8.21.0"
+  }
+}
