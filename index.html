@@ -30,7 +30,7 @@
       wsPort: 3000,
       forceTLS: false,
       disableStats: true,
-      enabledTransports: ['ws', 'wss']
+      enabledTransports: ['ws']
     });
 
     const channel = pusher.subscribe('my-channel');
