@@ -129,11 +129,20 @@ issue.
 
 ### Step 2 — Enable the required Apache modules
 You **cannot** load Apache modules from inside `.htaccess`. Enable them at the server
-level (or ask Cloudways support to do it):
+level via SSH (or ask Cloudways support to do it):
 ```bash
+# 1. Enable the modules
 sudo a2enmod proxy proxy_http proxy_wstunnel rewrite
+
+# 2. Restart Apache to apply changes
 sudo service apache2 restart
 ```
+
+**Note for Cloudways Users:** If you don't have `sudo` access, you can enable these
+modules through the Cloudways Platform:
+1. Go to **Server Management** -> **Settings & Packages** -> **Packages**.
+2. Look for Apache modules or contact support to ensure `proxy_wstunnel` is active.
+3. Also, ensure **Varnish** is disabled for your application or configured to bypass WebSocket paths, as Varnish can sometimes interfere with WebSocket upgrades.
 
 ### Step 3 — Check the Apache error log
 The exact failing directive is logged here:

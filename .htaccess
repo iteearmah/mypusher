@@ -30,6 +30,12 @@
     RewriteCond %{HTTP:Connection} upgrade [NC]
     RewriteRule ^/?(.*)$ ws://127.0.0.1:3000/$1 [P,L]
 
+    # Rule 1b: Catch WebSocket Upgrade Requests with comma-separated Connection headers
+    # (e.g. "keep-alive, Upgrade"). Some clients and proxies send this format.
+    RewriteCond %{HTTP:Upgrade} websocket [NC]
+    RewriteCond %{HTTP:Connection} .*Upgrade.* [NC]
+    RewriteRule ^/?(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+
     # 2. Proxy the Node.js HTTP API endpoints (e.g. /message, /pusher/auth) to the
     #    internal port 3000. The leading "/?" makes the rule robust regardless of
     #    whether mod_rewrite passes the path with or without a leading slash in this
