@@ -12,5 +12,5 @@ RewriteCond %{HTTP:Upgrade} websocket [NC]
 RewriteCond %{HTTP:Connection} upgrade [NC]
 RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
 
-# 2. Fallback for your standard HTTP/HTTPS API traffic (Optional)
-# RewriteRule ^(.*)$ http://127.0.0 [P,L]
+# 2. Proxy the Node.js HTTP API endpoints (e.g. /message) to the internal port 3000
+RewriteRule ^(message)$ http://127.0.0.1:3000/$1 [P,L]
