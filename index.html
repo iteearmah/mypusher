@@ -26,11 +26,11 @@
 
     const pusher = new Pusher(PUSHER_KEY, {
       cluster: PUSHER_CLUSTER,
-      wsHost: '127.0.0.1',
+      wsHost: 'phpstack-1635112-6507131.cloudwaysapps.com',
       wsPort: 3000,
       forceTLS: false,
       disableStats: true,
-      enabledTransports: ['ws']
+      enabledTransports: ['ws', 'wss']
     });
 
     const channel = pusher.subscribe('my-channel');

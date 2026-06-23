@@ -1,0 +1,28 @@
+# .htaccess for hosting the My Pusher server behind Apache
+# (e.g. a Cloudways "Custom PHP" application that fronts a Node.js process).
+#
+# Apache acts as a reverse proxy, forwarding HTTP and WebSocket traffic
+# to the Node.js server running locally (default port 3000).
+#
+# Requirements: mod_rewrite, mod_proxy, mod_proxy_http and mod_proxy_wstunnel
+# must be enabled on the server.
+
+RewriteEngine On
+
+# --- WebSocket upgrade ---
+# Forward WebSocket connections (ws:// and wss://) to the Node.js server.
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteCond %{HTTP:Connection} upgrade [NC]
+RewriteRule ^/?(.*) ws://127.0.0.1:3000/$1 [P,L]
+
+# --- Regular HTTP requests ---
+# Forward everything else to the Node.js server.
+RewriteCond %{HTTP:Upgrade} !=websocket [NC]
+RewriteRule ^/?(.*) http://127.0.0.1:3000/$1 [P,L]
+
+# Preserve the original Host header and forward proxy info.
+<IfModule mod_proxy.c>
+    ProxyPreserveHost On
+    ProxyRequests Off
+    RequestHeader set X-Forwarded-Proto "https" env=HTTPS
+</IfModule>

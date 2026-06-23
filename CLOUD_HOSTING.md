@@ -67,7 +67,29 @@ location / {
 }
 ```
 
-## 8. Client Configuration
+## 8. Apache (.htaccess) Hosting
+If your hosting stack uses **Apache** in front of the Node.js process (common for Cloudways "Custom PHP" applications), you can use the provided `.htaccess` file to reverse-proxy both HTTP and WebSocket traffic to the server.
+
+1.  Place the `.htaccess` file in your application's web root (e.g. `public_html`).
+2.  Make sure the following Apache modules are enabled: `mod_rewrite`, `mod_proxy`, `mod_proxy_http`, and `mod_proxy_wstunnel`.
+3.  The rules forward requests to the Node.js server running on `127.0.0.1:3000`. Adjust the port if your server uses a different one.
+
+```apache
+RewriteEngine On
+
+# Forward WebSocket connections to the Node.js server.
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteCond %{HTTP:Connection} upgrade [NC]
+RewriteRule ^/?(.*) ws://127.0.0.1:3000/$1 [P,L]
+
+# Forward regular HTTP requests to the Node.js server.
+RewriteCond %{HTTP:Upgrade} !=websocket [NC]
+RewriteRule ^/?(.*) http://127.0.0.1:3000/$1 [P,L]
+```
+
+With Apache handling SSL termination, clients can connect over `wss://` on port `443` while the Node.js server keeps listening on the local port.
+
+## 9. Client Configuration
 Once hosted, update your `index.html` or `MobileApp.js`:
 
 ```javascript
