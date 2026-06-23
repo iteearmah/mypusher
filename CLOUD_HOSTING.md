@@ -120,7 +120,7 @@ request.
 ### Step 1 — Confirm the Node.js backend is actually fine
 SSH into the server and hit the app directly (bypassing Apache):
 ```bash
-curl -i -X POST http://127.0.0.1:3000/message \
+curl -i -X POST http://phpstack-1635112-6508646.cloudwaysapps.com:3000/message \
   -H "Content-Type: application/json" \
   -d '{"channel":"my-channel","event":"my-event","data":{"message":"hi"}}'
 ```
