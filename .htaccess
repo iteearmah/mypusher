@@ -1,4 +1,9 @@
-DirectoryIndex disabled
 RewriteEngine On
-RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
-RewriteRule ^$ http://localhost:3000/ [P,L]
+
+# 1. Catch WebSocket Upgrade Requests and Proxy to your Node.js Port
+RewriteCond %{HTTP:Upgrade} websocket [NC]
+RewriteCond %{HTTP:Connection} upgrade [NC]
+RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+
+# 2. Fallback for your standard HTTP/HTTPS API traffic (Optional)
+# RewriteRule ^(.*)$ http://127.0.0 [P,L]
