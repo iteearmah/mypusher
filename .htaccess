@@ -10,5 +10,10 @@ RewriteCond %{HTTP:Upgrade} websocket [NC]
 RewriteCond %{HTTP:Connection} upgrade [NC]
 RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
 
-# 2. Proxy the Node.js HTTP API endpoints (e.g. /message) to the internal port 3000
-RewriteRule ^(message)$ http://127.0.0.1:3000/$1 [P,L]
+# 2. Proxy the Node.js HTTP API endpoints (e.g. /message, /pusher/auth) to the
+#    internal port 3000. The leading "/?" makes the rule robust regardless of
+#    whether mod_rewrite passes the path with or without a leading slash in this
+#    per-directory (.htaccess) context. We exclude WebSocket upgrades (already
+#    handled by rule 1) so this only catches plain HTTP API requests.
+RewriteCond %{HTTP:Upgrade} !=websocket [NC]
+RewriteRule ^/?(message|pusher/auth)$ http://127.0.0.1:3000/$1 [P,L]
