@@ -58,7 +58,10 @@ The `MobileApp.js` file provides a React Native component example.
 
 ## ☁️ Cloud Hosting
 
-For detailed instructions on how to host this server on **Cloudways**, see [CLOUD_HOSTING.md](./CLOUD_HOSTING.md).
+Detailed instructions for hosting:
+
+- [Cloudways Hosting Guide](./CLOUD_HOSTING.md)
+- [DigitalOcean VPS Hosting Guide](./DIGITAL_OCEAN_HOSTING.md)
 
 ## 🤝 Contributing
 

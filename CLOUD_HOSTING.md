@@ -95,7 +95,7 @@ Once hosted, update your `index.html` or `MobileApp.js`:
 ```javascript
 const pusher = new Pusher(PUSHER_KEY, {
   cluster: PUSHER_CLUSTER,
-  wsHost: 'your-app-domain.com', // Your Cloudways app domain
+  wsHost: 'pusher.your-app-domain.com', // Your domain or subdomain
   wsPort: 443,                   // Use 443 for SSL (WSS)
   forceTLS: true,                // Set to true for WSS
   disableStats: true,
