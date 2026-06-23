@@ -19,15 +19,21 @@
   <button onclick="sendMessage()">Send</button>
 
   <script>
-    // Replace with your local server details
+    // The .htaccess on the server proxies WebSocket (ws/wss) upgrade requests
+    // arriving on the standard ports (80/443) of the domain to the internal
+    // Node.js server on port 3000. So the client must connect to the domain on
+    // the standard HTTPS port (443) WITHOUT specifying port 3000, and use TLS.
     const PUSHER_KEY = 'any-key'; // Our custom server doesn't validate keys yet
     const PUSHER_CLUSTER = 'mt1';
-    const SERVER_URL = 'https://phpstack-1635112-6508646.cloudwaysapps.com:3000';
+    const SERVER_HOST = 'phpstack-1635112-6508646.cloudwaysapps.com';
+    const SERVER_URL = `https://${SERVER_HOST}`;
 
     const pusher = new Pusher(PUSHER_KEY, {
       cluster: PUSHER_CLUSTER,
-      wsHost: 'phpstack-1635112-6508646.cloudwaysapps.com',
-      forceTLS: false,
+      wsHost: SERVER_HOST,
+      wsPort: 80,
+      wssPort: 443,
+      forceTLS: true,
       disableStats: true,
       enabledTransports: ['ws', 'wss']
     });
