@@ -104,3 +104,45 @@ const pusher = new Pusher(PUSHER_KEY, {
 ```
 
 **Note:** If you are not using SSL (not recommended), use `wsPort: 80` and `forceTLS: false`.
+
+## 10. Troubleshooting: 500 Internal Server Error on `/message` and `wss://`
+
+If **both** the `POST /message` HTTP request **and** the `wss://.../app/...` WebSocket
+handshake return `500 Internal Server Error` at the same time, the problem is almost
+always the Apache proxy layer — not the Node.js app.
+
+The `.htaccess` reverse-proxy rules rely on the mod_rewrite proxy flag `[P]`. That flag
+only works when the proxy modules are loaded. If `mod_proxy`, `mod_proxy_http`, or
+`mod_proxy_wstunnel` are **not** enabled, Apache cannot fulfil a `[P]` rewrite to a
+`ws://` or `http://127.0.0.1:3000/` target and replies with `500` for every matching
+request.
+
+### Step 1 — Confirm the Node.js backend is actually fine
+SSH into the server and hit the app directly (bypassing Apache):
+```bash
+curl -i -X POST http://127.0.0.1:3000/message \
+  -H "Content-Type: application/json" \
+  -d '{"channel":"my-channel","event":"my-event","data":{"message":"hi"}}'
+```
+A `200 OK` here proves the Node.js server works and the 500 is purely an Apache/proxy
+issue.
+
+### Step 2 — Enable the required Apache modules
+You **cannot** load Apache modules from inside `.htaccess`. Enable them at the server
+level (or ask Cloudways support to do it):
+```bash
+sudo a2enmod proxy proxy_http proxy_wstunnel rewrite
+sudo service apache2 restart
+```
+
+### Step 3 — Check the Apache error log
+The exact failing directive is logged here:
+```bash
+sudo tail -n 50 /var/log/apache2/error.log
+```
+Look for messages such as `attempt to make remote request from mod_rewrite without
+proxy enabled` — that confirms the missing-module diagnosis.
+
+> The shipped `.htaccess` wraps its proxy rules in `<IfModule mod_proxy.c>`. When the
+> proxy modules are missing, the rules are skipped and you get a plain `404` instead of
+> a confusing `500`, which itself signals that the modules still need to be enabled.

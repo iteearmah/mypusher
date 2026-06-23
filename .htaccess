@@ -1,19 +1,41 @@
-RewriteEngine On
+# IMPORTANT — why you may be getting "500 Internal Server Error":
+# The rules below use the mod_rewrite proxy flag [P]. That flag ONLY works when
+# the proxy modules are loaded in Apache. If mod_proxy / mod_proxy_http /
+# mod_proxy_wstunnel are NOT enabled, Apache cannot satisfy a [P] rewrite to a
+# "ws://" or "http://host:port" target and answers every matching request with
+# HTTP 500. This is the most common cause of a 500 on BOTH /message AND the
+# wss:// WebSocket handshake at the same time (the Node.js backend itself is
+# fine — it returns 200 when reached directly on 127.0.0.1:3000).
+#
+# On Cloudways: enable the modules on the server (a2enmod proxy proxy_http
+# proxy_wstunnel && service apache2 restart). You cannot load Apache modules
+# from inside .htaccess, so this file alone cannot fix a missing-module 500.
+#
+# The <IfModule> guards below make this graceful: when the proxy modules are
+# present the traffic is forwarded to Node.js; when they are absent the proxy
+# rules are simply skipped (you get a plain 404 instead of a confusing 500),
+# which is itself a clear signal that the modules still need to be enabled.
 
-# 1. Catch WebSocket Upgrade Requests (both ws and wss) and proxy to your Node.js Port.
-#    Apache terminates TLS at the edge, while the internal Node.js server speaks
-#    plain (non-TLS) WebSocket. Therefore, even for secure (wss) client
-#    connections, the backend MUST be addressed as ws:// — using wss:// here
-#    would make Apache try a TLS handshake against a non-TLS backend and return
-#    an Internal Server Error (500).
-RewriteCond %{HTTP:Upgrade} websocket [NC]
-RewriteCond %{HTTP:Connection} upgrade [NC]
-RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+<IfModule mod_rewrite.c>
+  RewriteEngine On
 
-# 2. Proxy the Node.js HTTP API endpoints (e.g. /message, /pusher/auth) to the
-#    internal port 3000. The leading "/?" makes the rule robust regardless of
-#    whether mod_rewrite passes the path with or without a leading slash in this
-#    per-directory (.htaccess) context. We exclude WebSocket upgrades (already
-#    handled by rule 1) so this only catches plain HTTP API requests.
-RewriteCond %{HTTP:Upgrade} !=websocket [NC]
-RewriteRule ^/?(message|pusher/auth)$ http://127.0.0.1:3000/$1 [P,L]
+  <IfModule mod_proxy.c>
+    # 1. Catch WebSocket Upgrade Requests (both ws and wss) and proxy to your Node.js Port.
+    #    Apache terminates TLS at the edge, while the internal Node.js server speaks
+    #    plain (non-TLS) WebSocket. Therefore, even for secure (wss) client
+    #    connections, the backend MUST be addressed as ws:// — using wss:// here
+    #    would make Apache try a TLS handshake against a non-TLS backend and return
+    #    an Internal Server Error (500). Requires mod_proxy_wstunnel.
+    RewriteCond %{HTTP:Upgrade} websocket [NC]
+    RewriteCond %{HTTP:Connection} upgrade [NC]
+    RewriteRule ^/?(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+
+    # 2. Proxy the Node.js HTTP API endpoints (e.g. /message, /pusher/auth) to the
+    #    internal port 3000. The leading "/?" makes the rule robust regardless of
+    #    whether mod_rewrite passes the path with or without a leading slash in this
+    #    per-directory (.htaccess) context. We exclude WebSocket upgrades (already
+    #    handled by rule 1) so this only catches plain HTTP API requests.
+    RewriteCond %{HTTP:Upgrade} !=websocket [NC]
+    RewriteRule ^/?(message|pusher/auth)$ http://127.0.0.1:3000/$1 [P,L]
+  </IfModule>
+</IfModule>
