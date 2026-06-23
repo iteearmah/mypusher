@@ -1,6 +1,13 @@
 RewriteEngine On
 
-# 1. Catch WebSocket Upgrade Requests and Proxy to your Node.js Port
+# 1a. Catch Secure WebSocket Upgrade Requests (wss) over HTTPS and Proxy to your Node.js Port
+RewriteCond %{HTTP:Upgrade} websocket [NC]
+RewriteCond %{HTTP:Connection} upgrade [NC]
+RewriteCond %{HTTPS} =on [NC,OR]
+RewriteCond %{HTTP:X-Forwarded-Proto} =https [NC]
+RewriteRule ^(.*)$ wss://127.0.0.1:3000/$1 [P,L]
+
+# 1b. Catch standard WebSocket Upgrade Requests (ws) and Proxy to your Node.js Port
 RewriteCond %{HTTP:Upgrade} websocket [NC]
 RewriteCond %{HTTP:Connection} upgrade [NC]
 RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
