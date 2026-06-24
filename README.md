@@ -62,6 +62,7 @@ Detailed instructions for hosting:
 
 - [Cloudways Hosting Guide](./CLOUD_HOSTING.md)
 - [DigitalOcean VPS Hosting Guide](./DIGITAL_OCEAN_HOSTING.md)
+- [Render Hosting Guide](./RENDER_HOSTING.md)
 
 ## 🤝 Contributing
 
