@@ -64,6 +64,11 @@ app.get('/', (req, res) => {
   res.send('Custom Pusher-compatible Realtime Server is running');
 });
 
+// Keep-alive endpoint to prevent Render free instance from spinning down
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 // Endpoint to trigger events (Broadcast to local clients)
 app.post('/message', (req, res) => {
   const { channel, event, data } = req.body;
@@ -116,4 +121,17 @@ app.post('/pusher/auth', (req, res) => {
 const port = process.env.PORT || 3000;
 server.listen(port, () => {
   console.log(`Server started on port ${port}`);
+  
+  // Optional self-pinging to keep Render instance awake
+  if (process.env.SELF_PING_URL) {
+    const interval = parseInt(process.env.SELF_PING_INTERVAL) || 14 * 60 * 1000; // Default 14 mins
+    setInterval(() => {
+      http.get(process.env.SELF_PING_URL, (res) => {
+        console.log(`Self-ping sent to ${process.env.SELF_PING_URL}: ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.error(`Self-ping error: ${err.message}`);
+      });
+    }, interval);
+    console.log(`Self-pinging ${process.env.SELF_PING_URL} every ${interval / 1000 / 60} minutes`);
+  }
 });

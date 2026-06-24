@@ -32,3 +32,20 @@ When connecting your Pusher client, use:
 - **Host**: `your-app-name.onrender.com`
 - **Port**: `443` (for HTTPS/WSS)
 - **Use TLS**: `true`
+
+## Preventing Spin Down (Free Instance)
+
+Render's free tier spins down services after 15 minutes of inactivity. To keep your server awake and avoid the ~50s "cold start" delay, you can use one of the following methods:
+
+### Method 1: Self-Pinging (Easiest)
+
+Add the following environment variable to your Render service:
+- **Key**: `SELF_PING_URL`
+- **Value**: `https://your-app-name.onrender.com/ping`
+
+The server will automatically ping itself every 14 minutes to stay active.
+
+### Method 2: External Pinger
+
+Use a free service like [Cron-job.org](https://cron-job.org/) or [UptimeRobot](https://uptimerobot.com/) to ping your `/ping` endpoint every 5-10 minutes.
+- **URL**: `https://your-app-name.onrender.com/ping`
