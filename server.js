@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const http = require('http');
+const https = require('https');
 const WebSocket = require('ws');
 const crypto = require('crypto');
 
@@ -124,14 +125,17 @@ server.listen(port, () => {
   
   // Optional self-pinging to keep Render instance awake
   if (process.env.SELF_PING_URL) {
+    const url = process.env.SELF_PING_URL;
+    const protocol = url.startsWith('https') ? https : http;
     const interval = parseInt(process.env.SELF_PING_INTERVAL) || 14 * 60 * 1000; // Default 14 mins
+    
     setInterval(() => {
-      http.get(process.env.SELF_PING_URL, (res) => {
-        console.log(`Self-ping sent to ${process.env.SELF_PING_URL}: ${res.statusCode}`);
+      protocol.get(url, (res) => {
+        console.log(`Self-ping sent to ${url}: ${res.statusCode}`);
       }).on('error', (err) => {
         console.error(`Self-ping error: ${err.message}`);
       });
     }, interval);
-    console.log(`Self-pinging ${process.env.SELF_PING_URL} every ${interval / 1000 / 60} minutes`);
+    console.log(`Self-pinging ${url} every ${interval / 1000 / 60} minutes`);
   }
 });
