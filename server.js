@@ -18,6 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Store connected clients and their subscriptions
 const clients = new Map();
+const channelSubscribers = new Map(); // Map<channelName, Set<socketId>>
 
 wss.on('connection', (ws) => {
   const socketId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
@@ -41,6 +42,12 @@ wss.on('connection', (ws) => {
         const { channel } = typeof data === 'string' ? JSON.parse(data) : data;
         clients.get(socketId).channels.add(channel);
         
+        // Add to channelSubscribers map
+        if (!channelSubscribers.has(channel)) {
+          channelSubscribers.set(channel, new Set());
+        }
+        channelSubscribers.get(channel).add(socketId);
+        
         ws.send(JSON.stringify({
           event: 'pusher_internal:subscription_succeeded',
           channel: channel,
@@ -56,6 +63,19 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    const clientInfo = clients.get(socketId);
+    if (clientInfo) {
+      // Remove from all channel sets
+      clientInfo.channels.forEach(channel => {
+        const subscribers = channelSubscribers.get(channel);
+        if (subscribers) {
+          subscribers.delete(socketId);
+          if (subscribers.size === 0) {
+            channelSubscribers.delete(channel);
+          }
+        }
+      });
+    }
     clients.delete(socketId);
     console.log(`Client ${socketId} disconnected`);
   });
@@ -97,12 +117,17 @@ function broadcast(channel, event, data) {
   });
 
   let recipientCount = 0;
-  clients.forEach((clientInfo) => {
-    if (clientInfo.channels.has(channel)) {
-      clientInfo.ws.send(payload);
-      recipientCount++;
-    }
-  });
+  const subscribers = channelSubscribers.get(channel);
+  
+  if (subscribers) {
+    subscribers.forEach((socketId) => {
+      const client = clients.get(socketId);
+      if (client && client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(payload);
+        recipientCount++;
+      }
+    });
+  }
 
   console.log(`Event "${event}" triggered on channel "${channel}". Sent to ${recipientCount} clients.`);
   return recipientCount;
