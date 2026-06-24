@@ -67,6 +67,23 @@ app.get('/', (req, res) => {
 // Endpoint to trigger events (Broadcast to local clients)
 app.post('/message', (req, res) => {
   const { channel, event, data } = req.body;
+  broadcast(channel, event, data);
+  res.status(200).send({ message: 'Message sent' });
+});
+
+// Standard Pusher REST API endpoint for triggering events
+app.post('/apps/:appId/events', (req, res) => {
+  const { name: event, channels, channel, data } = req.body;
+  const targetChannels = channels || [channel];
+  
+  targetChannels.forEach(chan => {
+    broadcast(chan, event, data);
+  });
+
+  res.status(200).send({});
+});
+
+function broadcast(channel, event, data) {
   const payload = JSON.stringify({
     event: event,
     channel: channel,
@@ -82,8 +99,8 @@ app.post('/message', (req, res) => {
   });
 
   console.log(`Event "${event}" triggered on channel "${channel}". Sent to ${recipientCount} clients.`);
-  res.status(200).send({ message: 'Message sent', recipients: recipientCount });
-});
+  return recipientCount;
+}
 
 // Mock authentication endpoint
 app.post('/pusher/auth', (req, res) => {
