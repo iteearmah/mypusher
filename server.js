@@ -6,6 +6,7 @@ const http = require('http');
 const https = require('https');
 const WebSocket = require('ws');
 const crypto = require('crypto');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -88,6 +89,28 @@ app.get('/', (req, res) => {
 // Keep-alive endpoint to prevent Render free instance from spinning down
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
+});
+
+// Monitor dashboard
+app.get('/monitor', (req, res) => {
+  res.sendFile(path.join(__dirname, 'monitor.html'));
+});
+
+// Monitor stats API
+app.get('/monitor/stats', (req, res) => {
+  const stats = {
+    totalClients: clients.size,
+    totalChannels: channelSubscribers.size,
+    channels: {},
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  };
+
+  channelSubscribers.forEach((subscribers, channelName) => {
+    stats.channels[channelName] = subscribers.size;
+  });
+
+  res.json(stats);
 });
 
 // Endpoint to trigger events (Broadcast to local clients)
