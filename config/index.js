@@ -9,6 +9,10 @@ const config = {
     secret: process.env.PUSHER_APP_SECRET || 'YOUR_APP_SECRET',
     cluster: process.env.PUSHER_APP_CLUSTER || 'mt1',
   },
+  monitor: {
+    username: process.env.MONITOR_USERNAME || 'admin',
+    password: process.env.MONITOR_PASSWORD || 'password',
+  },
   selfPing: {
     url: process.env.SELF_PING_URL,
     interval: parseInt(process.env.SELF_PING_INTERVAL) || 14 * 60 * 1000,

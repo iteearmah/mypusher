@@ -17,6 +17,10 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background-color: #f8f9fa; font-weight: bold; font-size: 0.9rem; }
         .refresh-info { margin-top: 15px; font-size: 0.8rem; color: #888; }
+        .event-log { max-height: 200px; overflow-y: auto; background: #fff; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; border: 1px solid #eee; }
+        .event-item { margin-bottom: 4px; border-bottom: 1px solid #f9f9f9; padding-bottom: 2px; }
+        .event-time { color: #999; margin-right: 8px; }
+        .event-type { font-weight: bold; color: #e83e8c; }
         
         @media (max-width: 600px) {
             body { padding: 15px; }
@@ -39,24 +43,64 @@
             <div id="active-channels" class="stat-value">0</div>
         </div>
         <div class="stat-card">
+            <div class="stat-label">Countries</div>
+            <div id="total-countries" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Memory Usage</div>
+            <div id="memory-usage" class="stat-value">0MB</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Msgs In/Out</div>
+            <div id="messages-count" class="stat-value">0 / 0</div>
+        </div>
+        <div class="stat-card">
             <div class="stat-label">Server Uptime</div>
             <div id="uptime" class="stat-value">0s</div>
         </div>
     </div>
 
-    <h2>Active Channels</h2>
-    <div class="table-container">
-        <table id="channels-table">
-            <thead>
-                <tr>
-                    <th>Channel Name</th>
-                    <th>Subscribers</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Channels will be populated here -->
-            </tbody>
-        </table>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 300px;">
+            <h2>Active Channels</h2>
+            <div class="table-container">
+                <table id="channels-table">
+                    <thead>
+                        <tr>
+                            <th>Channel Name</th>
+                            <th>Subscribers</th>
+                            <th>Countries</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Channels will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 250px;">
+            <h2>Connections by Country</h2>
+            <div class="table-container">
+                <table id="countries-table">
+                    <thead>
+                        <tr>
+                            <th>Country</th>
+                            <th>Connections</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Countries will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <h2>Recent Server Events</h2>
+        <div id="event-log" class="event-log">
+            <!-- Events will be populated here -->
+        </div>
     </div>
 
     <div class="refresh-info">
@@ -71,20 +115,51 @@
                 
                 document.getElementById('total-clients').textContent = data.totalClients;
                 document.getElementById('active-channels').textContent = data.totalChannels;
+                document.getElementById('total-countries').textContent = Object.keys(data.countries || {}).length;
+                document.getElementById('memory-usage').textContent = formatMemory(data.memory.rss);
+                document.getElementById('messages-count').textContent = `${data.messagesReceived || 0} / ${data.messagesSent || 0}`;
                 document.getElementById('uptime').textContent = formatUptime(data.uptime);
                 document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
 
                 const tableBody = document.querySelector('#channels-table tbody');
                 tableBody.innerHTML = '';
                 
-                for (const [name, count] of Object.entries(data.channels)) {
+                for (const [name, info] of Object.entries(data.channels)) {
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td>${name}</td><td>${count}</td>`;
+                    const countries = info.countries.join(', ') || '-';
+                    row.innerHTML = `<td>${name}</td><td>${info.count}</td><td>${countries}</td>`;
                     tableBody.appendChild(row);
                 }
                 
                 if (Object.keys(data.channels).length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="2">No active channels</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="3">No active channels</td></tr>';
+                }
+
+                const countryTableBody = document.querySelector('#countries-table tbody');
+                countryTableBody.innerHTML = '';
+                
+                const sortedCountries = Object.entries(data.countries || {}).sort((a, b) => b[1] - a[1]);
+                for (const [country, count] of sortedCountries) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${country}</td><td>${count}</td>`;
+                    countryTableBody.appendChild(row);
+                }
+                
+                if (Object.keys(data.countries || {}).length === 0) {
+                    countryTableBody.innerHTML = '<tr><td colspan="2">No data</td></tr>';
+                }
+
+                const eventLog = document.getElementById('event-log');
+                eventLog.innerHTML = '';
+                (data.recentEvents || []).forEach(event => {
+                    const item = document.createElement('div');
+                    item.className = 'event-item';
+                    const time = new Date(event.time).toLocaleTimeString();
+                    item.innerHTML = `<span class="event-time">[${time}]</span> <span class="event-type">${event.type.toUpperCase()}:</span> ${event.details}`;
+                    eventLog.appendChild(item);
+                });
+                if ((data.recentEvents || []).length === 0) {
+                    eventLog.innerHTML = '<div>No recent events</div>';
                 }
             } catch (err) {
                 console.error('Failed to fetch stats:', err);
@@ -96,6 +171,14 @@
             const m = Math.floor((seconds % 3600) / 60);
             const s = Math.floor(seconds % 60);
             return `${h}h ${m}m ${s}s`;
+        }
+
+        function formatMemory(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
         fetchStats();

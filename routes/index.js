@@ -1,8 +1,29 @@
 const express = require('express');
 const path = require('path');
+const config = require('../config');
 const { broadcast, getStats } = require('../lib/websocket');
 
 const router = express.Router();
+
+// Simple basic auth middleware for monitor
+const monitorAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Pusher Monitor"');
+    return res.status(401).send('Authentication required');
+  }
+
+  const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+  const user = auth[0];
+  const pass = auth[1];
+
+  if (user === config.monitor.username && pass === config.monitor.password) {
+    next();
+  } else {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Pusher Monitor"');
+    return res.status(401).send('Invalid credentials');
+  }
+};
 
 router.get('/', (req, res) => {
   res.send('Custom Pusher-compatible Realtime Server is running');
@@ -14,12 +35,12 @@ router.get('/ping', (req, res) => {
 });
 
 // Monitor dashboard
-router.get('/monitor', (req, res) => {
+router.get('/monitor', monitorAuth, (req, res) => {
   res.sendFile(path.join(process.cwd(), 'monitor.html'));
 });
 
 // Monitor stats API
-router.get('/monitor/stats', (req, res) => {
+router.get('/monitor/stats', monitorAuth, (req, res) => {
   res.json(getStats());
 });
 
