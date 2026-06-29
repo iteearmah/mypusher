@@ -49,3 +49,14 @@ The server will automatically ping itself every 14 minutes to stay active.
 
 Use a free service like [Cron-job.org](https://cron-job.org/) or [UptimeRobot](https://uptimerobot.com/) to ping your `/ping` endpoint every 5-10 minutes.
 - **URL**: `https://your-app-name.onrender.com/ping`
+
+## Security: Configuring Allowed Origins on Render
+
+Since `allowed_origins.json` is ignored by Git, you should use an environment variable to define your allowed domains on Render.
+
+1. In your Render Dashboard, go to your Web Service.
+2. Click **Environment**.
+3. Add a new Environment Variable:
+   - **Key**: `ALLOWED_ORIGINS`
+   - **Value**: `localhost, *.onrender.com, your-custom-domain.com` (comma-separated list)
+4. Save Changes. Render will automatically redeploy your service with the new settings.

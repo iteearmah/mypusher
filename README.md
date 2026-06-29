@@ -24,7 +24,24 @@ cd mypusher
 npm install
 ```
 
-### 2. Start the Server
+### 2. Configure Allowed Origins
+You can configure which domains are allowed to connect to your WebSocket server using either a configuration file or an environment variable.
+
+#### Option A: Configuration File (Recommended for Local Dev)
+Copy the example configuration and add your domains:
+```bash
+cp allowed_origins.json.example allowed_origins.json
+```
+Edit `allowed_origins.json` to include your application's domain. Wildcards (e.g., `*.onrender.com`) are supported.
+
+#### Option B: Environment Variable (Recommended for Production)
+Set the `ALLOWED_ORIGINS` environment variable with a comma-separated list of domains:
+```bash
+export ALLOWED_ORIGINS="localhost, *.yourdomain.com, another-app.onrender.com"
+```
+This is the preferred method when deploying to platforms like Render, Heroku, or DigitalOcean.
+
+### 3. Start the Server
 ```bash
 node server.js
 ```
