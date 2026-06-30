@@ -8,6 +8,28 @@ const config = require('./config');
 const { initWebSocketServer } = require('./lib/websocket');
 const routes = require('./routes');
 
+// Parse command line arguments
+const args = process.argv.slice(2);
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--port' || args[i] === '-p') {
+    const port = parseInt(args[i + 1]);
+    if (!isNaN(port)) {
+      config.port = port;
+      i++;
+    }
+  } else if (args[i] === '--env' || args[i] === '-e') {
+    const envFile = args[i + 1];
+    if (envFile) {
+      require('dotenv').config({ path: envFile });
+      // Update config object after reloading env
+      delete require.cache[require.resolve('./config')];
+      const newConfig = require('./config');
+      Object.assign(config, newConfig);
+      i++;
+    }
+  }
+}
+
 const app = express();
 const server = http.createServer(app);
 

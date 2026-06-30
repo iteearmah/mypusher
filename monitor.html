@@ -361,6 +361,7 @@
         let isLogCleared = false;
         let clearTimestamp = null;
         let lastData = { channels: {}, countries: {}, recentEvents: [] };
+        const clientCountries = new Map();
 
         document.getElementById('channel-search').addEventListener('input', (e) => {
             channelFilter = e.target.value.toLowerCase();
@@ -383,6 +384,15 @@
                 const response = await fetch('/monitor/stats');
                 const data = await response.json();
                 
+                // Update client mapping from events
+                if (data.recentEvents) {
+                    data.recentEvents.forEach(e => {
+                        if (e.type === 'client_info' && e.details && e.details.socketId) {
+                            clientCountries.set(e.details.socketId, e.details.country);
+                        }
+                    });
+                }
+
                 // If log was cleared, check if we have any new events to reset the cleared state
                 // Or simply keep it cleared for existing events in the server-side buffer
                 if (isLogCleared && data.recentEvents && data.recentEvents.length > 0) {
@@ -411,6 +421,15 @@
             }
         }
 
+        function getFlagEmoji(countryCode) {
+            if (!countryCode || countryCode === 'Unknown' || countryCode === '-') return '';
+            const codePoints = countryCode
+                .toUpperCase()
+                .split('')
+                .map(char => 127397 + char.charCodeAt(0));
+            return String.fromCodePoint(...codePoints);
+        }
+
         function renderChannels(data) {
             const tableBody = document.querySelector('#channels-table tbody');
             tableBody.innerHTML = '';
@@ -420,7 +439,7 @@
 
             for (const [name, info] of filteredEntries) {
                 const row = document.createElement('tr');
-                const countries = info.countries.join(', ') || '-';
+                const countries = info.countries.map(c => `${getFlagEmoji(c)} ${c}`).join(', ') || '-';
                 row.innerHTML = `<td>${name}</td><td>${info.count}</td><td>${countries}</td>`;
                 tableBody.appendChild(row);
             }
@@ -437,7 +456,8 @@
             const sortedCountries = Object.entries(data.countries || {}).sort((a, b) => b[1] - a[1]);
             for (const [country, count] of sortedCountries) {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td>${country}</td><td>${count}</td>`;
+                const flag = getFlagEmoji(country);
+                row.innerHTML = `<td>${flag} ${country}</td><td>${count}</td>`;
                 countryTableBody.appendChild(row);
             }
             
@@ -448,7 +468,7 @@
 
         function renderEvents(data) {
             const eventLog = document.getElementById('event-log');
-            let eventsToShow = data.recentEvents || [];
+            let eventsToShow = (data.recentEvents || []).filter(e => e.type !== 'client_info');
             
             if (isLogCleared && clearTimestamp) {
                 // Only show events that happened after the clear action
@@ -466,7 +486,46 @@
                 item.className = 'event-item';
                 const time = new Date(event.time).toLocaleTimeString();
                 const typeClass = `type-${event.type.toLowerCase()}`;
-                item.innerHTML = `<span class="event-time">${time}</span> <span class="event-type ${typeClass}">${event.type.toUpperCase()}</span> <span class="event-details">${event.details}</span>`;
+                
+                let details = event.details;
+                // Add flag to connect/subscribe events if country/details is present
+                if (event.type === 'connect' && details.includes('Country: ')) {
+                    const countryPart = details.split('Country: ')[1];
+                    if (countryPart) {
+                        const country = countryPart.split(',')[0].trim();
+                        const flag = getFlagEmoji(country);
+                        if (flag) {
+                            details = details.replace(`Country: ${country}`, `Country: ${flag} ${country}`);
+                        }
+                    }
+                } else if (event.type === 'subscribe' && details.includes('Channel: ')) {
+                    // Find if we can link this to a country from current data
+                    const socketIdPart = details.split('ID: ')[1];
+                    if (socketIdPart) {
+                        const socketId = socketIdPart.split(',')[0].trim();
+                        const country = clientCountries.get(socketId);
+                        if (country) {
+                            const flag = getFlagEmoji(country);
+                            if (flag) {
+                                details += ` (${flag})`;
+                            }
+                        }
+                    }
+                } else if (event.type === 'disconnect' && details.includes('ID: ')) {
+                    const socketIdPart = details.split('ID: ')[1];
+                    if (socketIdPart) {
+                        const socketId = socketIdPart.split(',')[0].trim();
+                        const country = clientCountries.get(socketId);
+                        if (country) {
+                            const flag = getFlagEmoji(country);
+                            if (flag) {
+                                details += ` (${flag})`;
+                            }
+                        }
+                    }
+                }
+
+                item.innerHTML = `<span class="event-time">${time}</span> <span class="event-type ${typeClass}">${event.type.toUpperCase()}</span> <span class="event-details">${details}</span>`;
                 eventLog.appendChild(item);
             });
 

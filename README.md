@@ -48,6 +48,11 @@ node server.js
 ```
 The server will start on port `3000` by default.
 
+#### Command Line Flags
+You can also use flags to override configuration:
+- `--port` or `-p`: Set the port (e.g., `node server.js --port 4000`)
+- `--env` or `-e`: Specify a custom `.env` file (e.g., `node server.js --env .env.prod`)
+
 ## 📊 Monitoring
 
 The server includes a built-in real-time monitoring dashboard with a retro "Amber Terminal" interface.
