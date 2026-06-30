@@ -10,6 +10,7 @@ A custom-built, lightweight WebSocket server that implements the Pusher protocol
 
 - **Pusher Protocol Compatibility**: Drop-in replacement for the `pusher-js` client.
 - **WebSocket Based**: High-performance, low-latency real-time communication.
+- **Real-time Monitoring**: Built-in dashboard to track connections, channels, and events.
 - **No External Dependencies**: Run your own infrastructure without third-party services.
 - **Easy Integration**: Includes ready-to-use examples for Web and Mobile (React Native).
 - **Production Ready**: Includes guides for hosting on Cloudways and handling proxies.
@@ -46,6 +47,28 @@ This is the preferred method when deploying to platforms like Render, Heroku, or
 node server.js
 ```
 The server will start on port `3000` by default.
+
+## 📊 Monitoring
+
+The server includes a built-in real-time monitoring dashboard with a retro "Amber Terminal" interface.
+
+![Pusher Server Monitor](monitor-screenshot.png)
+
+### Accessing the Dashboard
+1. Start the server.
+2. Navigate to `http://localhost:3000/monitor` in your browser.
+3. Authenticate using the default credentials (or your configured ones):
+   - **Username**: `admin`
+   - **Password**: `password`
+
+### Features tracked:
+- **Live Connection Stats**: Number of connected users and active channels.
+- **Global Reach**: Track connections by country.
+- **Server Health**: Memory usage and server uptime.
+- **Message Throughput**: Real-time count of incoming and outgoing messages.
+- **Event Log**: Live stream of server events for debugging.
+
+You can configure the dashboard credentials using the `MONITOR_USERNAME` and `MONITOR_PASSWORD` environment variables.
 
 ## 📱 Client Integration
 
