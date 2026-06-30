@@ -29,9 +29,21 @@ This guide provides instructions on how to deploy your custom Pusher-compatible 
 Render natively supports WebSockets. No additional configuration is required. Your server will be available at `https://your-app-name.onrender.com`.
 
 When connecting your Pusher client, use:
-- **Host**: `your-app-name.onrender.com`
+- **Host**: `your-app-name.onrender.com` (Do NOT include `https://`)
 - **Port**: `443` (for HTTPS/WSS)
 - **Use TLS**: `true`
+- **Force TLS**: `true` (Recommended for Render)
+
+Example configuration for `pusher-js`:
+```javascript
+const pusher = new Pusher('any-key', {
+  wsHost: 'your-app-name.onrender.com',
+  wsPort: 443,
+  wssPort: 443,
+  forceTLS: true,
+  enabledTransports: ['ws', 'wss']
+});
+```
 
 ## Preventing Spin Down (Free Instance)
 
